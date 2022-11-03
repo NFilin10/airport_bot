@@ -23,7 +23,7 @@ def get_all_departures():
         x += 5
         y += 5
     print(b)
-
+get_all_departures()
 #получение индексов каждой страны, чтобы можно было определять какая страна интересует пользователя
 def get_country_indexes():
     url = "https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
@@ -120,7 +120,27 @@ def main():
     sihtkohad("forward", sihtkoht, kuupaev)
 
     print(get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens))
-main()
+
+
+def get_best_ticket_prices():
+    url = 'https://www.estravel.ee/lennupiletid/results/type/roundtrip/fromdate-0/2022-11-05/from-0/TLL/returndate/2022-11-11/to-0/AYT/adt/1/service/Economy'
+
+    r = requests.get(url)
+
+    my_json = r.content.decode('utf8').replace("'", '"')
+
+    js = json.loads(my_json)
+
+    for i in range(0, len(js["flights"]["flights"])):
+        if js["flights"]["flights"][i]["isFastest"] == True:
+            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+
+
+
+
+get_best_ticket_prices()
+
+
 
 
 
