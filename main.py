@@ -73,7 +73,41 @@ def get_nonce():
     nonce = form.find_all('input', id='_wpnonce')
     for i in nonce:
         nonce = i.get('value')
-    print(nonce)
+    return nonce
 
 
-#Try to get ticket link
+
+def get_dest_airport_name():
+    url = 'https://www.tallinn-airport.ee/findflight.php?language=et&term=Antalya'
+    pg = requests.get(url)
+    content = json.loads(pg.text)
+    airport = content[0]["value"]
+    return airport
+
+
+def get_tickets_link():
+    payload = {
+        'goToSearch': '1',
+        'language': 'et',
+        '_wpnonce': get_nonce(),
+        '_wp_http_referer': '/lennuinfo/sihtkohad/',
+        'action': 'search_flight_form_submit',
+        'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
+        'flightTo': get_dest_airport_name(), #change this
+        'startDate': '05.11.2022', #change this
+        'backDate': '11.11.2022', #change this
+        'adults': '1', #change this
+        'children': '0', #change this
+        'infants': '0', #change this
+    }
+
+    url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"
+    page = requests.post(url, data=payload)
+    content = json.loads(page.text)
+    ticket_link = content['data'].replace("\\", "")
+    print(ticket_link)
+get_tickets_link()
+
+
+
+
