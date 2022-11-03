@@ -64,3 +64,16 @@ def sihtkohad(direction):
               f"Lennufirma: {flight_info[i]['airlines'][0]['name']}\nLennu nr: {flight_info[i]['airlines'][0]['nr']}\n")
 
 
+#получение данных для корректного запроса на сайт, чтобы получить билеты (еще не готово)
+def get_nonce():
+    url = "https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    form = soup.find('form', class_='form')
+    nonce = form.find_all('input', id='_wpnonce')
+    for i in nonce:
+        nonce = i.get('value')
+    print(nonce)
+
+
+#Try to get ticket link
