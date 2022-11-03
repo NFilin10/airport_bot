@@ -39,11 +39,11 @@ def get_country_indexes():
     return country_data
 
 #получение доступных рейсов в выбранную дату
-def sihtkohad(direction):
-    sihkoht = "Riia"  #input("Sisesta sihtkoht: ")
-    date = input("Sisesta lennu kuupäev: ")
+def sihtkohad(direction, sihtkoht, date):
+    # sihkoht = "Riia"  #input("Sisesta sihtkoht: ")
+    # date = input("Sisesta lennu kuupäev: ")
 
-    sihtkoha_id = get_country_indexes()[sihkoht]
+    sihtkoha_id = get_country_indexes()[sihtkoht]
     #page = requests.get("https://www.tallinn-airport.ee/lennuinfo/sihtkohad/#/s=" + sihkoht)
 
     payload = {
@@ -77,15 +77,15 @@ def get_nonce():
 
 
 
-def get_dest_airport_name():
-    url = 'https://www.tallinn-airport.ee/findflight.php?language=et&term=Antalya'
+def get_dest_airport_name(sihtkoht):
+    url = 'https://www.tallinn-airport.ee/findflight.php?language=et&term=' + sihtkoht.capitalize()
     pg = requests.get(url)
     content = json.loads(pg.text)
     airport = content[0]["value"]
     return airport
 
 
-def get_tickets_link():
+def get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens):
     payload = {
         'goToSearch': '1',
         'language': 'et',
@@ -93,20 +93,35 @@ def get_tickets_link():
         '_wp_http_referer': '/lennuinfo/sihtkohad/',
         'action': 'search_flight_form_submit',
         'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
-        'flightTo': get_dest_airport_name(), #change this
-        'startDate': '05.11.2022', #change this
-        'backDate': '11.11.2022', #change this
-        'adults': '1', #change this
-        'children': '0', #change this
-        'infants': '0', #change this
+        'flightTo': get_dest_airport_name(sihtkoht), #change this
+        'startDate': kuupaev, #change this
+        'backDate': tagasi_lend, #change this
+        'adults': adults, #change this
+        'children': children, #change this
+        'infants': pens, #change this
     }
 
     url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"
     page = requests.post(url, data=payload)
     content = json.loads(page.text)
     ticket_link = content['data'].replace("\\", "")
-    print(ticket_link)
-get_tickets_link()
+    return ticket_link
+
+
+def main():
+    sihtkoht = input("Sisesta sistkoht: ").capitalize()
+    kuupaev = input("Sisesta kuupaev: ")
+    tagasi_lend = input("Sisesta tagasilend: ")
+    adults = str(input("sisesta adults"))
+    children = str(input("sisesta children"))
+    pens = str(input("sisesta pens"))
+
+
+    sihtkohad("forward", sihtkoht, kuupaev)
+
+    print(get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens))
+main()
+
 
 
 
