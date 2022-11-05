@@ -1,29 +1,45 @@
 from bs4 import BeautifulSoup
 import requests
 import json
+import datetime
 
 #Получание всех вылетов (таблица, которая нахолится в переменной url)
 def get_all_departures():
     url = "https://www.tallinn-airport.ee/lennuinfo/reaalaja-lennuinfo/?type=departures"
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
-    a = []
+    terve_tabel = []
 
-    columns = soup.find_all('td')
+    read = soup.find_all('td')
 
-    for i in columns:
-        a.append(i.text.replace("\n", "").replace("\t", ""))
+    for rida in read:
+        terve_tabel.append(rida.text.replace("\n", "").replace("\t", ""))
 
-    b = []
+    all_departures = []
+    index1 = 0
+    index2 = 5
+    for i in terve_tabel:
+        all_departures.append(terve_tabel[index1:index2])
+        index1 += 5
+        index2 += 5
 
-    x = 0
-    y = 5
-    for i in a:
-        b.append(a[x:y])
-        x += 5
-        y += 5
-    print(b)
-get_all_departures()
+    times = []
+
+    sihtkoht = "Riga"
+
+    for i in range(0, len(all_departures)):
+        for j in range(0, len(all_departures[i])):
+            if sihtkoht in all_departures[i][j]:
+                time = [all_departures[i][0], all_departures[i][-1]]
+                if "Saabus" in time[1] or time[1] == '':
+                    continue
+                else:
+                    times.append(time)
+    print(times)
+
+
+
+
 #получение индексов каждой страны, чтобы можно было определять какая страна интересует пользователя
 def get_country_indexes():
     url = "https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
@@ -40,11 +56,8 @@ def get_country_indexes():
 
 #получение доступных рейсов в выбранную дату
 def sihtkohad(direction, sihtkoht, date):
-    # sihkoht = "Riia"  #input("Sisesta sihtkoht: ")
-    # date = input("Sisesta lennu kuupäev: ")
 
     sihtkoha_id = get_country_indexes()[sihtkoht]
-    #page = requests.get("https://www.tallinn-airport.ee/lennuinfo/sihtkohad/#/s=" + sihkoht)
 
     payload = {
         'action': 'adm_get_flights_by_date',
@@ -57,12 +70,13 @@ def sihtkohad(direction, sihtkoht, date):
     flights = requests.post("https://www.tallinn-airport.ee/wp-admin/admin-ajax.php", data=payload)
     flight_info = json.loads(flights.text)
 
-    print("On olemas järgmised lennud:")
+    lennud = []
+
     for i in range(0, len(flight_info)):
-        print(f"Sihtkoht: {flight_info[i]['name']}\nVäljumine: {flight_info[i]['timeDepartureFormatted']}\n"
+        lennud.append(f"Sihtkoht: {flight_info[i]['name']}\nVäljumine: {flight_info[i]['timeDepartureFormatted']}\n"
               f"Saabumine: {flight_info[i]['timeArrivalFormatted']}\nKestvus: {flight_info[i]['durationInHours']}\n"
               f"Lennufirma: {flight_info[i]['airlines'][0]['name']}\nLennu nr: {flight_info[i]['airlines'][0]['nr']}\n")
-
+    return "\n".join(lennud)
 
 #получение данных для корректного запроса на сайт, чтобы получить билеты (еще не готово)
 def get_nonce():
@@ -83,7 +97,7 @@ def get_dest_airport_name(sihtkoht):
     content = json.loads(pg.text)
     airport = content[0]["value"]
     return airport
-
+#print(get_dest_airport_name("Antalya"))
 
 def get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens):
     payload = {
@@ -123,23 +137,57 @@ def main():
 
 
 def get_best_ticket_prices():
+    s = requests.Session()
     url = 'https://www.estravel.ee/lennupiletid/results/type/roundtrip/fromdate-0/2022-11-05/from-0/TLL/returndate/2022-11-11/to-0/AYT/adt/1/service/Economy'
 
-    r = requests.get(url)
+    r = s.get(url)
+    print(r)
+    r2 = s.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et')
+    print(r2.content)
+    # my_json = r.content.decode('utf8').replace("'", '"')
+    # print(my_json)
+    #
+    # js = json.loads(my_json)
+    #
+    # for i in range(0, len(js["flights"]["flights"])):
+    #     if js["flights"]["flights"][i]["isFastest"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
+    #     if js["flights"]["flights"][i]["isOptimum"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
+    #     if js["flights"]["flights"][i]["isCheapest"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
 
-    my_json = r.content.decode('utf8').replace("'", '"')
-
-    js = json.loads(my_json)
-
-    for i in range(0, len(js["flights"]["flights"])):
-        if js["flights"]["flights"][i]["isFastest"] == True:
-            print(js["flights"]["flights"][i]["priceInfo"]["total"])
 
 
+#get_best_ticket_prices()
+# p = {"adt_count":'1',
+#     "chd_count":'0',
+#     "inf_count":'0',
+#     "legs":[{"from":"TLL","to":"AYT","date":"06.11.2022"},
+#     {"from":"AYT","to":"TLL","date":"11.11.2022"}],
+#     "pref_carrier":'[]',
+#     "get_calendar":'true',
+#     "get_alternatives":'true',
+#      "service_class":"Economy"}
+#
+# r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
+#
+# print(r.content)
 
+#сделать словарь в котором будут эстонские и международные названия стран,
+#чтобы при ввода страны первая функция могла находить нужное название на английскои
+#и давть нужный инптут времени вылетов
+#https://www.estravel.ee/wp-json/flights/v1/flight-results?lang=et&search_id=11776905&calendar_id=false
 
-get_best_ticket_prices()
+def kuupaev_kontroll(date):
+    try:
+        datetime.datetime.strptime(date, '%m.%d.%Y')
+        result = True
 
+    except ValueError:
+        result = False
+
+    return result
 
 
 
