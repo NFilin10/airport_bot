@@ -203,22 +203,25 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
     r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
     id = json.loads(r.text)
     id = json.dumps(id["result"]["search_id"])
-    time.sleep(2)
+    time.sleep(10)
     url = f"https://www.estravel.ee/wp-json/flights/v1/flight-results?lang=et&search_id={id}&calendar_id=false"
+    print(url)
     js = requests.get(url)
 
     decode_js = js.content.decode('utf8').replace("'", '"')
     js = json.loads(decode_js)
     print(js)
 
+    prices = []
     for i in range(0, len(js["flights"]["flights"])):
         if js["flights"]["flights"][i]["isFastest"] == True:
-            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+            prices.append(["Fastest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
         if js["flights"]["flights"][i]["isOptimum"] == True:
-            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+            prices.append(["Optium", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
         if js["flights"]["flights"][i]["isCheapest"] == True:
-            print(js["flights"]["flights"][i]["priceInfo"]["total"])
-    return js
+            prices.append(["Cheapest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+    #print(prices)
+    return prices
 
 
     # pg = requests.get(url)
@@ -246,7 +249,7 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
 
 def kuupaev_kontroll(date):
     try:
-        datetime.datetime.strptime(date, '%m.%d.%Y')
+        datetime.datetime.strptime(date, '%d.%m.%Y')
         result = True
 
     except ValueError:
