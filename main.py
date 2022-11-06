@@ -1,3 +1,5 @@
+import time
+
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -97,9 +99,9 @@ def get_dest_airport_name(sihtkoht):
     content = json.loads(pg.text)
     airport = content[0]["value"]
     return airport
-#print(get_dest_airport_name("Antalya"))
 
-def get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens):
+
+def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pens, suund1):
     payload = {
         'goToSearch': '1',
         'language': 'et',
@@ -107,13 +109,17 @@ def get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens):
         '_wp_http_referer': '/lennuinfo/sihtkohad/',
         'action': 'search_flight_form_submit',
         'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
-        'flightTo': get_dest_airport_name(sihtkoht), #change this
+        'flightTo': get_dest_airport_name(sihtkoht),
+        'oneWay': suund,
         'startDate': kuupaev, #change this
         'backDate': tagasi_lend, #change this
         'adults': adults, #change this
         'children': children, #change this
         'infants': pens, #change this
     }
+
+
+
 
     url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"
     page = requests.post(url, data=payload)
@@ -136,14 +142,14 @@ def main():
     print(get_tickets_link(sihtkoht, kuupaev, tagasi_lend, adults, children, pens))
 
 
-def get_best_ticket_prices():
-    s = requests.Session()
-    url = 'https://www.estravel.ee/lennupiletid/results/type/roundtrip/fromdate-0/2022-11-05/from-0/TLL/returndate/2022-11-11/to-0/AYT/adt/1/service/Economy'
-
-    r = s.get(url)
-    print(r)
-    r2 = s.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et')
-    print(r2.content)
+# def get_best_ticket_prices():
+#     s = requests.Session()
+#     url = 'https://www.estravel.ee/lennupiletid/results/type/roundtrip/fromdate-0/2022-11-05/from-0/TLL/returndate/2022-11-11/to-0/AYT/adt/1/service/Economy'
+#
+#     r = s.get(url)
+#     print(r)
+#     r2 = s.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et')
+#     print(r2.content)
     # my_json = r.content.decode('utf8').replace("'", '"')
     # print(my_json)
     #
@@ -159,20 +165,79 @@ def get_best_ticket_prices():
 
 
 
-#get_best_ticket_prices()
-# p = {"adt_count":'1',
-#     "chd_count":'0',
-#     "inf_count":'0',
-#     "legs":[{"from":"TLL","to":"AYT","date":"06.11.2022"},
-#     {"from":"AYT","to":"TLL","date":"11.11.2022"}],
-#     "pref_carrier":'[]',
-#     "get_calendar":'true',
-#     "get_alternatives":'true',
-#      "service_class":"Economy"}
-#
-# r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
-#
-# print(r.content)
+def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1):
+    print(suund1)
+    if suund1 == "forward":
+        p = {"adt_count":adults,
+            "chd_count":children,
+            "inf_count":infants,
+            "legs":[{"from":"TLL","to":dest_airport_name,"date":user_date}],
+            "pref_carrier":'[]',
+            "get_calendar":'true',
+            "get_alternatives":'true',
+            "service_class":"Economy"}
+    elif suund1 == "back":
+        p = {"adt_count":adults,
+            "chd_count":children,
+            "inf_count":infants,
+            "legs":[{"from":dest_airport_name,"to":"TLL","date":user_date}],
+            "pref_carrier":'[]',
+            "get_calendar":'true',
+            "get_alternatives":'true',
+            "service_class":"Economy"}
+
+    elif suund1 == "both":
+        p = {"adt_count":adults,
+            "chd_count":children,
+            "inf_count":infants,
+            "legs":[{"from":"TLL","to":dest_airport_name,"date":user_date},
+            {"from":dest_airport_name,"to":"TLL","date":tagasilend}],
+            "pref_carrier":'[]',
+            "get_calendar":'true',
+            "get_alternatives":'true',
+            "service_class":"Economy"}
+
+    else:
+        p = ''
+    print(p)
+    r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
+    id = json.loads(r.text)
+    id = json.dumps(id["result"]["search_id"])
+    time.sleep(2)
+    url = f"https://www.estravel.ee/wp-json/flights/v1/flight-results?lang=et&search_id={id}&calendar_id=false"
+    js = requests.get(url)
+
+    decode_js = js.content.decode('utf8').replace("'", '"')
+    js = json.loads(decode_js)
+    print(js)
+
+    for i in range(0, len(js["flights"]["flights"])):
+        if js["flights"]["flights"][i]["isFastest"] == True:
+            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+        if js["flights"]["flights"][i]["isOptimum"] == True:
+            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+        if js["flights"]["flights"][i]["isCheapest"] == True:
+            print(js["flights"]["flights"][i]["priceInfo"]["total"])
+    return js
+
+
+    # pg = requests.get(url)
+    # print(pg.text)
+    # decode_js = pg.content.decode('utf8').replace("'", '"')
+    # js = json.loads(decode_js)
+    # print(js)
+
+
+    # for i in range(0, len(js["flights"]["flights"])):
+    #     if js["flights"]["flights"][i]["isFastest"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
+    #     if js["flights"]["flights"][i]["isOptimum"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
+    #     if js["flights"]["flights"][i]["isCheapest"] == True:
+    #         print(js["flights"]["flights"][i]["priceInfo"]["total"])
+
+
+
 
 #сделать словарь в котором будут эстонские и международные названия стран,
 #чтобы при ввода страны первая функция могла находить нужное название на английскои
