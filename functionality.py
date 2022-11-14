@@ -53,6 +53,25 @@ def get_country_indexes():
     return country_data
 
 
+def get_avaliable_dates(sihtkoht):
+    payload = {
+        'action': 'adm_get_destination_calendar_times',
+        'id': get_country_indexes()[sihtkoht]
+    }
+    url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"
+
+    page = requests.post(url, data=payload)
+
+    content = page.text
+
+    content_dict = json.loads(content)
+
+    forward = content_dict['forward']
+    back = content_dict['back']
+    return forward, back
+
+
+
 def sihtkohad(direction, sihtkoht, date):
 
     sihtkoha_id = get_country_indexes()[sihtkoht]
@@ -106,11 +125,11 @@ def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pe
         'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
         'flightTo': get_dest_airport_name(sihtkoht),
         'oneWay': suund,
-        'startDate': kuupaev, #change this
-        'backDate': tagasi_lend, #change this
-        'adults': adults, #change this
-        'children': children, #change this
-        'infants': pens, #change this
+        'startDate': kuupaev,
+        'backDate': tagasi_lend,
+        'adults': adults,
+        'children': children,
+        'infants': pens
     }
 
     url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"

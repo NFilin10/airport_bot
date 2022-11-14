@@ -37,13 +37,22 @@ def get_suund(message, sihtkoht):
     suund = message.text
     print("suund:", suund)
     print("sihtkoht", sihtkoht)
-
-    bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.direction)
-    bot.register_next_step_handler(message, date, suund, sihtkoht)
+    if suund == "Sinna":
+        kuupaevad = functionality.get_avaliable_dates(sihtkoht)[0]
+        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_sinna(kuupaevad))
+        bot.register_next_step_handler(message, date, suund, sihtkoht)
+    elif suund == "Tagasi":
+        kuupaevad = functionality.get_avaliable_dates(sihtkoht)[1]
+        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad))
+        bot.register_next_step_handler(message, date, suund, sihtkoht)
+    elif suund == "Mõlemad":
+        kuupaevad = functionality.get_avaliable_dates(sihtkoht)[0]
+        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_sinna(kuupaevad))
+        bot.register_next_step_handler(message, date, suund, sihtkoht)
 
 
 def vale_kuupaev(message, sihtkoht, suund):
-        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.delete_keyboard)
+        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)")
         bot.register_next_step_handler(message, date, suund, sihtkoht)
 
 
