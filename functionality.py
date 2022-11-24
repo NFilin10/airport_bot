@@ -1,4 +1,5 @@
 import time
+import matplotlib.pyplot as plt
 
 from bs4 import BeautifulSoup
 import requests
@@ -6,8 +7,8 @@ import json
 import datetime
 
 
-def get_all_departures():
-    url = "https://www.tallinn-airport.ee/lennuinfo/reaalaja-lennuinfo/?type=departures"
+def get_all_departures(sihtkoht):
+    url = "https://www.tallinn-airport.ee/en/flight-info/realtime-flights/"
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
     terve_tabel = []
@@ -25,22 +26,101 @@ def get_all_departures():
         index1 += 5
         index2 += 5
 
-    times = []
+    sihtkoht_times = []
 
-    sihtkoht = "Riga"
 
-    for i in range(0, len(all_departures)):
-        for j in range(0, len(all_departures[i])):
-            if sihtkoht in all_departures[i][j]:
-                time = [all_departures[i][0], all_departures[i][-1]]
-                if "Saabus" in time[1] or time[1] == '':
-                    continue
-                else:
-                    times.append(time)
 
+    for i in all_departures:
+        if i == []:
+            pass
+        else:
+            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+                sihtkoht_times.append(i[0::4]+i[3:4])
+    all_departures_times = []
+
+    for i in all_departures:
+        if i == []:
+            pass
+        else:
+            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+                all_departures_times.append(i[0::4]+i[3:4])
+
+
+
+
+    for i in sihtkoht_times:
+        for j in range(1, 2):
+            i[j] = i[j].replace("Departed ", "")
+
+    for i in all_departures_times:
+        for j in range(1, 2):
+            i[j] = i[j].replace("Departed ", "")
+
+
+
+    sihtkoht_times_dict = {}
+    for i in range(len(sihtkoht_times)):
+
+        if sihtkoht_times[i][2] not in sihtkoht_times_dict:
+
+            sihtkoht_times_dict[sihtkoht_times[i][2]] = [sihtkoht_times[i][0:2]]
+        else:
+            sihtkoht_times_dict[sihtkoht_times[i][2]] += [sihtkoht_times[i][0:2]]
+
+
+
+    all_departures_dict = {}
+    for i in range(len(all_departures_times)):
+
+        if all_departures_times[i][2] not in all_departures_dict:
+
+            all_departures_dict[all_departures_times[i][2]] = [all_departures_times[i][0:2]]
+        else:
+            all_departures_dict[all_departures_times[i][2]] += [all_departures_times[i][0:2]]
+    return all_departures_dict, sihtkoht_times_dict
+
+
+
+def time_difference_minutes(d):
+    format = '%H:%M'
+    company = []
+    viivitus = []
+    sum = 0
+    for k, v in d.items():
+        for i in v:
+            date1, date2  = i
+
+            datetime1 = datetime.datetime.strptime(date1, format)
+            datetime2 = datetime.datetime.strptime(date2, format)
+
+            seconds = (datetime2 - datetime1).total_seconds()
+            minutes = int(seconds / 60)
+            if minutes <= 0:
+                pass
+            else:
+                print(minutes)
+                sum += minutes
+
+
+        viivitus.append(sum/len(d[k]))
+        company.append(k)
+        sum = 0
+    return viivitus, company
+
+
+def graph(all_viiv, all_comp, dest_viiv, dest_comp):
+    print(all_viiv)
+    print(all_comp)
+    print(dest_viiv)
+    print(dest_comp)
+    plt.scatter(all_viiv, all_comp)
+    plt.scatter(dest_viiv, dest_comp)
+    plt.tick_params(axis='y', labelsize=7, rotation=40)
+
+    plt.savefig('graph1.png')
 
 def get_country_indexes():
-    url = "https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
+    url = 'https://www.tallinn-airport.ee/en/flight-info/destinations/'#"https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
     ids = soup.find_all('li', class_='destination-item')
@@ -67,7 +147,9 @@ def get_avaliable_dates(sihtkoht):
     content_dict = json.loads(content)
 
     forward = content_dict['forward']
+    print("FOW", forward)
     back = content_dict['back']
+    print("BACK", back)
     return forward, back
 
 
@@ -112,6 +194,8 @@ def get_dest_airport_name(sihtkoht):
     pg = requests.get(url)
     content = json.loads(pg.text)
     airport = content[0]["value"]
+
+
     return airport
 
 
@@ -174,6 +258,7 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
         p = ''
 
     r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
+    print(p)
     id = json.loads(r.text)
     id = json.dumps(id["result"]["search_id"])
     time.sleep(10)
@@ -183,6 +268,7 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
     js = json.loads(decode_js)
 
     prices = []
+
     for i in range(0, len(js["flights"]["flights"])):
         if js["flights"]["flights"][i]["isFastest"] == True:
             prices.append(["Fastest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
@@ -190,6 +276,7 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
             prices.append(["Optium", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
         if js["flights"]["flights"][i]["isCheapest"] == True:
             prices.append(["Cheapest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+    print(prices)
     return prices
 
 
