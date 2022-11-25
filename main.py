@@ -10,32 +10,17 @@ bot = telebot.TeleBot(token)
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, "Tere tulemast!\nSee on bot, mis aitab vaadata erinevaid lennureise ja pileteid\nAlustamiseks sisesta /find")
-#
-# @bot.message_handler(commands=['graph'])
-# def send_graph(message):
-#     all_dep, sihtkoht_dep = functionality.get_all_departures()
-#     all_dep_viiv, all_dep_comp = functionality.time_difference_minutes(all_dep)
-#     sihtkoht_viiv, sihtkoht_comp = functionality.time_difference_minutes(sihtkoht_dep)
-#     functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
-#
-#     if os.path.exists('graph1.png'):
-#         photo = open('graph1.png', 'rb')
-#         bot.send_photo(message.chat.id, photo)
-#         os.remove('graph1.png')
-#     else:
-#         print("error")
-
-
 
 
 @bot.message_handler(commands=['find'])
 def find(message):
-    all_plases = []
+    # all_plases = []
     bot.send_message(message.chat.id, "Sisetage koht kuhu soovite minna")
-    for place, id in functionality.get_country_indexes().items():
-        all_plases.append(place)
-    all_plases_formatted = '\n'.join(all_plases)
-    bot.send_message(message.chat.id, f"Sisetage koht kuhu soovite minna:\n{all_plases_formatted}")
+    countries = functionality.get_country_indexes()
+    # for place, id in functionality.get_country_indexes().items():
+    #     all_plases.append(place)
+    # all_plases_formatted = '\n'.join(all_plases)
+    bot.send_message(message.chat.id, f"Sisetage koht kuhu soovite minna: ", reply_markup=keyboard.countries(countries))
     bot.register_next_step_handler(message, get_place)
 
 
@@ -63,9 +48,7 @@ def get_suund(message, sihtkoht):
         bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad))
         bot.register_next_step_handler(message, date, suund, sihtkoht, None)
     elif suund == "Mõlemad":
-        kuupaevad_sinna = functionality.get_avaliable_dates(sihtkoht)[0]
-        kuupaevad_tagsi = functionality.get_avaliable_dates(sihtkoht)[1]
-
+        kuupaevad_sinna, kuupaevad_tagsi = functionality.get_avaliable_dates(sihtkoht)
         bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_sinna(kuupaevad_sinna))
         bot.register_next_step_handler(message, date, suund, sihtkoht, kuupaevad_tagsi)
 
@@ -81,13 +64,12 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
     if functionality.kuupaev_kontroll(user_date) == True:
         if suund == "Sinna":
             suund1 = "forward"
-            bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund, sihtkoht, user_date)}")
+            bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund1, sihtkoht, user_date)}")
             bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse?", reply_markup=keyboard.link_vajalik)
             bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '1', None, suund1)
         elif suund == "Tagasi":
-            bot.send_message(message.chat.id, "Sisestage tagasi lennu kuupaev:")
             suund1 = "back"
-            bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund, sihtkoht, user_date)}")
+            bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund1, sihtkoht, user_date)}")
             bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse?", reply_markup=keyboard.link_vajalik)
             bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '1', None, suund1)
 

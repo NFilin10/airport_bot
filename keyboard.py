@@ -1,5 +1,4 @@
 from telebot import types
-from functionality import get_avaliable_dates
 
 delete_keyboard = types.ReplyKeyboardRemove()
 
@@ -19,7 +18,7 @@ link_vajalik = link_markup.add(jah, ei)
 
 
 def kuupaevad_sinna(kuupaevad):
-    #kuupaead_sinna = []
+    kuupaead_sinna = []
     kuupaead_sinna_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for date in kuupaevad:
         button_sinna = types.KeyboardButton(date)
@@ -27,10 +26,19 @@ def kuupaevad_sinna(kuupaevad):
     return kuupaead_sinna
 
 def kuupaevad_tagasi(kuupaevad):
-   # kuupaead_tagasi= []
+    kuupaead_tagasi = []
     kuupaead_tagasi_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for date in kuupaevad:
         print(date)
         button_tagasi = types.KeyboardButton(date)
         kuupaead_tagasi = kuupaead_tagasi_markup.add(button_tagasi)
     return kuupaead_tagasi
+
+
+def countries(country_dict):
+    countries = []
+    countries_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for country in country_dict.keys():
+        button_countries = types.KeyboardButton(country)
+        countries = countries_markup.add(button_countries)
+    return countries

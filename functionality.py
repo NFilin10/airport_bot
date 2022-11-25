@@ -27,8 +27,7 @@ def get_all_departures(sihtkoht):
         index2 += 5
 
     sihtkoht_times = []
-
-
+    all_departures_times = []
 
     for i in all_departures:
         if i == []:
@@ -36,14 +35,10 @@ def get_all_departures(sihtkoht):
         else:
             if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
                 sihtkoht_times.append(i[0::4]+i[3:4])
-    all_departures_times = []
-
-    for i in all_departures:
-        if i == []:
-            pass
-        else:
             if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
-                all_departures_times.append(i[0::4]+i[3:4])
+                all_departures_times.append(i[0::4] + i[3:4])
+
+
 
 
 
@@ -113,8 +108,8 @@ def graph(all_viiv, all_comp, dest_viiv, dest_comp):
     print(all_comp)
     print(dest_viiv)
     print(dest_comp)
-    plt.scatter(all_viiv, all_comp)
-    plt.scatter(dest_viiv, dest_comp)
+    plt.scatter(all_viiv, all_comp, color='blue')
+    plt.scatter(dest_viiv, dest_comp, color='red')
     plt.tick_params(axis='y', labelsize=7, rotation=40)
 
     plt.savefig('graph1.png')
@@ -131,7 +126,7 @@ def get_country_indexes():
         country_id = id.get('data-destination')
         country_data[country_name] = country_id
     return country_data
-
+print(get_country_indexes())
 
 def get_avaliable_dates(sihtkoht):
     payload = {
@@ -165,7 +160,7 @@ def sihtkohad(direction, sihtkoht, date):
         'direction': direction,
         'language': 'et'
     }
-
+    print(payload)
     flights = requests.post("https://www.tallinn-airport.ee/wp-admin/admin-ajax.php", data=payload)
     flight_info = json.loads(flights.text)
 
