@@ -1,6 +1,5 @@
 import time
 import matplotlib.pyplot as plt
-
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -33,14 +32,10 @@ def get_all_departures(sihtkoht):
         if i == []:
             pass
         else:
-            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
                 sihtkoht_times.append(i[0::4]+i[3:4])
-            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Värav suletud' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Väljumas' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
                 all_departures_times.append(i[0::4] + i[3:4])
-
-
-
-
 
 
     for i in sihtkoht_times:
@@ -50,7 +45,6 @@ def get_all_departures(sihtkoht):
     for i in all_departures_times:
         for j in range(1, 2):
             i[j] = i[j].replace("Departed ", "")
-
 
 
     sihtkoht_times_dict = {}
@@ -63,7 +57,6 @@ def get_all_departures(sihtkoht):
             sihtkoht_times_dict[sihtkoht_times[i][2]] += [sihtkoht_times[i][0:2]]
 
 
-
     all_departures_dict = {}
     for i in range(len(all_departures_times)):
 
@@ -73,7 +66,6 @@ def get_all_departures(sihtkoht):
         else:
             all_departures_dict[all_departures_times[i][2]] += [all_departures_times[i][0:2]]
     return all_departures_dict, sihtkoht_times_dict
-
 
 
 def time_difference_minutes(d):
@@ -114,6 +106,7 @@ def graph(all_viiv, all_comp, dest_viiv, dest_comp):
 
     plt.savefig('graph1.png')
 
+
 def get_country_indexes():
     url = 'https://www.tallinn-airport.ee/en/flight-info/destinations/'#"https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
     page = requests.get(url)
@@ -127,6 +120,7 @@ def get_country_indexes():
         country_data[country_name] = country_id
     return country_data
 print(get_country_indexes())
+
 
 def get_avaliable_dates(sihtkoht):
     payload = {
@@ -148,9 +142,7 @@ def get_avaliable_dates(sihtkoht):
     return forward, back
 
 
-
 def sihtkohad(direction, sihtkoht, date):
-
     sihtkoha_id = get_country_indexes()[sihtkoht]
 
     payload = {
