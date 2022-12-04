@@ -82,11 +82,13 @@ def time_difference_minutes(d):
 
             seconds = (datetime2 - datetime1).total_seconds()
             minutes = int(seconds / 60)
+            print(minutes)
             if minutes <= 0:
                 pass
             else:
                 print(minutes)
                 sum += minutes
+
 
 
         viivitus.append(round(sum/len(d[k]), 2))

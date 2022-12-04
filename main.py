@@ -194,15 +194,24 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
 
 def send_graph(message, sihtkoht):
     all_dep, sihtkoht_dep = functionality.get_all_departures(sihtkoht)
+    print(sihtkoht_dep)
     if sihtkoht_dep == {}:
         bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
     all_dep_viiv, all_dep_comp = functionality.time_difference_minutes(all_dep)
     sihtkoht_viiv, sihtkoht_comp = functionality.time_difference_minutes(sihtkoht_dep)
+    if 0.0 in sihtkoht_viiv:
+        sihtkoht_viiv = []
+        sihtkoht_comp = []
     viivitus = functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
-    print(viivitus)
+    print("see on viiv", viivitus)
     if os.path.exists('graph1.png'):
-        if viivitus != []:
+        if viivitus == 0.0 or viivitus == []:
+            bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
+
+        elif viivitus != []:
             bot.send_message(message.chat.id, f"Keskmine viivitus sihtkohta {sihtkoht} on {round(viivitus, 1)} minutit")
+
+
 
         photo = open('graph1.png', 'rb')
         bot.send_photo(message.chat.id, photo)
