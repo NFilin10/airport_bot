@@ -94,7 +94,7 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
                 find(message)
             else:
                 bot.send_message(message.chat.id, f"On olemas järgmised lennud sinna:\n\n{lennud_sinna}")
-                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupaev", reply_markup=keyboard.kuupaevad_sinna(kuupaevad_tagsi))
+                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupaev", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad_tagsi))
                 bot.register_next_step_handler(message, back_date, sihtkoht, suund, user_date, suund1)
 
     elif user_date == "/find":
@@ -108,8 +108,9 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
 
 def back_date(message, sihtkoht, suund, user_date, suund1):
     back_date = message.text
+    print("TAGSI", back_date)
     if functionality.kuupaev_kontroll(back_date) == True:
-        lennud_tagasi = functionality.sihtkohad(suund1, sihtkoht, user_date)
+        lennud_tagasi = functionality.sihtkohad("back", sihtkoht, back_date)
         if back_date == "":
             bot.send_message(message.chat.id, "Sellel kuupaeval lendu ei toimu")
             find(message)
@@ -130,6 +131,12 @@ def link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
     vastus = message.text
     if vastus == "Ei":
         bot.send_message(message.chat.id, "Aitah, et kasutasite boti")
+
+    elif vastus == "/find":
+        find(message)
+    elif vastus == "/start":
+        start()
+
     else:
         bot.send_message(message.chat.id, "Sisestage taiskasvanute arv", reply_markup=keyboard.delete_keyboard)
         bot.register_next_step_handler(message, taiskasvanud, sihtkoht, user_date, suund, tagasilend, suund1)
@@ -164,14 +171,21 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
         dest_airport_name = ''.join(l[l.index('('):l.index(")")+1])
 
         bot.send_message(message.chat.id, "Laen alla parimad hinnad...")
-        prices = functionality.get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1)
-        prices_msg = []
-        for price in range(0, len(prices)):
-            prices_msg.append(" ".join(prices[price]))
+        try:
+            prices = functionality.get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1)
+            prices_msg = []
 
-        formatted_prices = "\n".join(prices_msg)
-        bot.send_message(message.chat.id, formatted_prices)
-        send_graph(message, sihtkoht)
+            for price in range(0, len(prices)):
+                prices_msg.append(" ".join(prices[price]))
+
+            formatted_prices = "\n".join(prices_msg)
+            bot.send_message(message.chat.id, formatted_prices)
+            send_graph(message, sihtkoht)
+        except Exception as e:
+            print(e)
+            bot.send_message(message.chat.id, "Tekkis viga, palun proovige uuesti")
+            link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
+
     except Exception as e:
         print(e)
         bot.send_message(message.chat.id, "Vale sisend, palun proovige uuesti")
@@ -184,9 +198,12 @@ def send_graph(message, sihtkoht):
         bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
     all_dep_viiv, all_dep_comp = functionality.time_difference_minutes(all_dep)
     sihtkoht_viiv, sihtkoht_comp = functionality.time_difference_minutes(sihtkoht_dep)
-    functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
-
+    viivitus = functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
+    print(viivitus)
     if os.path.exists('graph1.png'):
+        if viivitus != []:
+            bot.send_message(message.chat.id, f"Keskmine viivitus sihtkohta {sihtkoht} on {round(viivitus, 1)} minutit")
+
         photo = open('graph1.png', 'rb')
         bot.send_photo(message.chat.id, photo)
         os.remove('graph1.png')

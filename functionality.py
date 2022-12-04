@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 import datetime
-
+import numpy as np
 
 def get_all_departures(sihtkoht):
     url = "https://www.tallinn-airport.ee/en/flight-info/realtime-flights/"
@@ -32,9 +32,9 @@ def get_all_departures(sihtkoht):
         if i == []:
             pass
         else:
-            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing':
                 sihtkoht_times.append(i[0::4]+i[3:4])
-            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Väljub':
+            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing':
                 all_departures_times.append(i[0::4] + i[3:4])
 
 
@@ -89,23 +89,38 @@ def time_difference_minutes(d):
                 sum += minutes
 
 
-        viivitus.append(sum/len(d[k]))
+        viivitus.append(round(sum/len(d[k]), 2))
         company.append(k)
         sum = 0
     return viivitus, company
 
 
 def graph(all_viiv, all_comp, dest_viiv, dest_comp):
-    print(all_viiv)
-    print(all_comp)
-    print(dest_viiv)
-    print(dest_comp)
+    plt.title('Viivituse graafik', fontsize=12)
+    plt.xlabel("Keskmine viivitus minutites", fontsize=9)
+
+    plt.xticks(np.arange(0, max(all_viiv+dest_viiv)+1, 8))
+
+    plt.tick_params(axis='y', labelsize=7, rotation=40)
+    plt.tick_params(axis='x', labelsize=8, rotation=40)
+
+    plt.hlines(all_comp, 0, all_viiv, linestyle="dashed")
+    plt.hlines(dest_comp, 0, dest_viiv, linestyle="dashed", color='red')
+    plt.xlim(0, None)
+    plt.ylim(0, None)
+
     plt.scatter(all_viiv, all_comp, color='blue')
     plt.scatter(dest_viiv, dest_comp, color='red')
-    plt.tick_params(axis='y', labelsize=7, rotation=40)
-
     plt.savefig('graph1.png')
 
+    if dest_viiv != []:
+        dest_viiv_kesk = 0
+        for i in dest_viiv:
+            dest_viiv_kesk += i
+        dest_viiv_kesk = dest_viiv_kesk / len(dest_viiv)
+        return dest_viiv_kesk
+    else:
+        return []
 
 def get_country_indexes():
     url = 'https://www.tallinn-airport.ee/en/flight-info/destinations/'#"https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
@@ -119,7 +134,7 @@ def get_country_indexes():
         country_id = id.get('data-destination')
         country_data[country_name] = country_id
     return country_data
-print(get_country_indexes())
+
 
 
 def get_avaliable_dates(sihtkoht):
@@ -177,13 +192,17 @@ def get_nonce():
 
 
 def get_dest_airport_name(sihtkoht):
-    url = 'https://www.tallinn-airport.ee/findflight.php?language=et&term=' + sihtkoht.capitalize()
-    pg = requests.get(url)
-    content = json.loads(pg.text)
-    airport = content[0]["value"]
+    if sihtkoht == "Sharm el Sheikh":
+        airport = "Sharm El Sheikh, Ophira (SSH) - Egiptus"
+        return airport
+    else:
+        url = 'https://www.tallinn-airport.ee/findflight.php?language=et&term=' + sihtkoht.capitalize()
+        pg = requests.get(url)
+        content = json.loads(pg.text)
+        airport = content[0]["value"]
 
 
-    return airport
+        return airport
 
 
 def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pens, suund1):
@@ -211,6 +230,7 @@ def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pe
 
 
 def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1):
+
     if suund1 == "forward":
         p = {"adt_count":adults,
             "chd_count":children,
@@ -245,12 +265,23 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
         p = ''
 
     r = requests.post('https://www.estravel.ee/wp-json/flights/v1/flight-search?lang=et', json=p)
-    print(p)
     id = json.loads(r.text)
-    id = json.dumps(id["result"]["search_id"])
+
+    search_id = json.dumps(id["result"]["search_id"])
+    calendar_id = json.dumps(id["result"]["calendar_id"])
+
+    print(search_id)
+    print(calendar_id)
     time.sleep(10)
-    url = f"https://www.estravel.ee/wp-json/flights/v1/flight-results?lang=et&search_id={id}&calendar_id=false"
-    js = requests.get(url)
+
+    p1 = {
+        'lang':'et',
+        'search_id':search_id,
+        'calendar_id':calendar_id
+    }
+
+    url = f"https://www.estravel.ee/wp-json/flights/v1/flight-results?lang=et&search_id={search_id}&calendar_id={calendar_id}"
+    js = requests.get(url, data=p1)
     decode_js = js.content.decode('utf8').replace("'", '"')
     js = json.loads(decode_js)
 
@@ -258,11 +289,12 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
 
     for i in range(0, len(js["flights"]["flights"])):
         if js["flights"]["flights"][i]["isFastest"] == True:
-            prices.append(["Fastest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Kiireim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
         if js["flights"]["flights"][i]["isOptimum"] == True:
-            prices.append(["Optium", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Parim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
         if js["flights"]["flights"][i]["isCheapest"] == True:
-            prices.append(["Cheapest", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Soodsaim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+
     print(prices)
     return prices
 
