@@ -8,10 +8,10 @@ bot = telebot.TeleBot(token)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "Tere tulemast!\nSee on bot, mis aitab vaadata erinevaid lennureise ja pileteid\nAlustamiseks sisesta /find")
+    bot.send_message(message.chat.id, "Tere tulemast!\nSee on bot, mis aitab vaadata erinevaid lennureise ja pileteid\nAlustamiseks sisesta /otsi")
 
 
-@bot.message_handler(commands=['find'])
+@bot.message_handler(commands=['otsi'])
 def find(message):
     countries = functionality.get_country_indexes()
     bot.send_message(message.chat.id, f"Sisetage koht kuhu soovite minna: ", reply_markup=keyboard.countries(countries))
@@ -21,7 +21,7 @@ def find(message):
 def get_place(message):
     user_place = message.text
     if user_place in functionality.get_country_indexes():
-        bot.send_message(message.chat.id, "Valige suund", reply_markup=keyboard.direction)
+        bot.send_message(message.chat.id, "Valige suund:", reply_markup=keyboard.direction)
         bot.register_next_step_handler(message, get_suund, user_place)
 
     elif user_place == "/find":
@@ -37,15 +37,15 @@ def get_suund(message, sihtkoht):
     suund = message.text
     if suund == "Sinna":
         kuupaevad = functionality.get_avaliable_dates(sihtkoht)[0]
-        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_sinna(kuupaevad))
+        bot.send_message(message.chat.id, "Valige kuupäev:", reply_markup=keyboard.kuupaevad_sinna(kuupaevad))
         bot.register_next_step_handler(message, date, suund, sihtkoht, None)
     elif suund == "Tagasi":
         kuupaevad = functionality.get_avaliable_dates(sihtkoht)[1]
-        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad))
+        bot.send_message(message.chat.id, "Valige kuupäev:", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad))
         bot.register_next_step_handler(message, date, suund, sihtkoht, None)
     elif suund == "Mõlemad":
         kuupaevad_sinna, kuupaevad_tagsi = functionality.get_avaliable_dates(sihtkoht)
-        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)", reply_markup=keyboard.kuupaevad_sinna(kuupaevad_sinna))
+        bot.send_message(message.chat.id, "Valige kuupäev:", reply_markup=keyboard.kuupaevad_sinna(kuupaevad_sinna))
         bot.register_next_step_handler(message, date, suund, sihtkoht, kuupaevad_tagsi)
 
     elif suund == "/find":
@@ -54,12 +54,13 @@ def get_suund(message, sihtkoht):
         start()
 
     else:
-        bot.send_message(message.chat.id, "Sellist suunda ei ole")
+        bot.send_message(message.chat.id, "Sellist suunda ei ole. Palun proovige uuesti")
+        find(message)
 
 
-def vale_kuupaev(message, sihtkoht, suund):
-        bot.send_message(message.chat.id, "Valige kuupäev (date.month.year)")
-        bot.register_next_step_handler(message, date, suund, sihtkoht)
+def vale_kuupaev(message, sihtkoht, suund, kuupaevad_tagasi):
+        bot.send_message(message.chat.id, "Valige kuupäev:")
+        bot.register_next_step_handler(message, date, suund, sihtkoht, kuupaevad_tagasi)
 
 
 def date(message, suund, sihtkoht, kuupaevad_tagsi):
@@ -70,32 +71,33 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
             suund1 = "forward"
             lennud_sinna = functionality.sihtkohad('forward', sihtkoht, user_date)
             if lennud_sinna == "":
-                bot.send_message(message.chat.id, "Sellel kuupaeval lendu ei toimu")
+                bot.send_message(message.chat.id, "Sellel kuupäeval lendu ei toimu")
                 find(message)
-            bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund1, sihtkoht, user_date)}")
-            bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse?", reply_markup=keyboard.link_vajalik)
-            bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '1', None, suund1)
+            else:
+                bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{functionality.sihtkohad(suund1, sihtkoht, user_date)}")
+                bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse graafikut?", reply_markup=keyboard.link_vajalik)
+                bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '1', None, suund1)
         elif suund == "Tagasi":
             suund1 = "back"
             lennud_tagasi = functionality.sihtkohad(suund1, sihtkoht, user_date)
             if lennud_tagasi == "":
-                bot.send_message(message.chat.id, "Sellel kuupaeval lendu ei toimu")
+                bot.send_message(message.chat.id, "Sellel kuupäeval lendu ei toimu")
                 find(message)
             else:
                 bot.send_message(message.chat.id, f"On olemas järgmised lennud:\n\n{lennud_tagasi}")
-                bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse?", reply_markup=keyboard.link_vajalik)
+                bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse graafikut?", reply_markup=keyboard.link_vajalik)
                 bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '1', None, suund1)
 
         elif suund == "Mõlemad":
             suund1 = "both"
             lennud_sinna = functionality.sihtkohad('forward', sihtkoht, user_date)
             if lennud_sinna == "":
-                bot.send_message(message.chat.id, "Sellel kuupaeval lendu ei toimu")
+                bot.send_message(message.chat.id, "Sellel kuupäeval lendu ei toimu")
                 find(message)
             else:
                 bot.send_message(message.chat.id, f"On olemas järgmised lennud sinna:\n\n{lennud_sinna}")
-                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupaev", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad_tagsi))
-                bot.register_next_step_handler(message, back_date, sihtkoht, suund, user_date, suund1)
+                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupäev", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad_tagsi))
+                bot.register_next_step_handler(message, back_date, sihtkoht, suund, user_date, suund1, kuupaevad_tagsi)
 
     elif user_date == "/find":
         find(message)
@@ -103,20 +105,20 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
         start()
     elif functionality.kuupaev_kontroll(user_date) == False:
         bot.send_message(message.chat.id, f"Kuupäev on sisestatud valesti. Palun proovige uuesti")
-        vale_kuupaev(message, sihtkoht, suund)
+        vale_kuupaev(message, sihtkoht, suund, kuupaevad_tagsi)
 
 
-def back_date(message, sihtkoht, suund, user_date, suund1):
+def back_date(message, sihtkoht, suund, user_date, suund1, kuupaevad_tagasi):
     back_date = message.text
     print("TAGSI", back_date)
     if functionality.kuupaev_kontroll(back_date) == True:
         lennud_tagasi = functionality.sihtkohad("back", sihtkoht, back_date)
-        if back_date == "":
-            bot.send_message(message.chat.id, "Sellel kuupaeval lendu ei toimu")
+        if lennud_tagasi == "":
+            bot.send_message(message.chat.id, "Sellel kuupäeval lendu ei toimu")
             find(message)
         else:
             bot.send_message(message.chat.id, f"On olemas järgmised lennud tagasi:\n\n{lennud_tagasi}")
-            bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse?", reply_markup=keyboard.link_vajalik)
+            bot.send_message(message.chat.id, "Kas Te soovite piletite linki ja viivituse graafikut?", reply_markup=keyboard.link_vajalik)
             bot.register_next_step_handler(message, link_vajalik_vastus, sihtkoht, user_date, '0', back_date, suund1)
     elif back_date == "/find":
         find(message)
@@ -124,13 +126,13 @@ def back_date(message, sihtkoht, suund, user_date, suund1):
         start()
     elif functionality.kuupaev_kontroll(back_date) == False:
         bot.send_message(message.chat.id, f"Kuupäev on sisestatud valesti. Palun proovige uuesti")
-        vale_kuupaev(message, sihtkoht, suund)
+        vale_kuupaev(message, sihtkoht, suund, kuupaevad_tagasi)
 
 
 def link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1):
     vastus = message.text
     if vastus == "Ei":
-        bot.send_message(message.chat.id, "Aitah, et kasutasite boti")
+        bot.send_message(message.chat.id, "Aitäh, et kasutasite boti!", reply_markup=keyboard.delete_keyboard)
 
     elif vastus == "/find":
         find(message)
@@ -138,27 +140,27 @@ def link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
         start()
 
     else:
-        bot.send_message(message.chat.id, "Sisestage taiskasvanute arv", reply_markup=keyboard.delete_keyboard)
+        bot.send_message(message.chat.id, "Sisestage täiskasvanute arv:", reply_markup=keyboard.delete_keyboard)
         bot.register_next_step_handler(message, taiskasvanud, sihtkoht, user_date, suund, tagasilend, suund1)
 
 
 def taiskasvanud(message, sihtkoht, user_date, suund, tagasilend, suund1):
     try:
         adults = int(message.text)
-        bot.send_message(message.chat.id, "Siestage laste arv")
+        bot.send_message(message.chat.id, "Siestage laste arv:")
         bot.register_next_step_handler(message, lapsed, sihtkoht, user_date, suund, tagasilend, adults, suund1)
     except:
-        bot.send_message(message.chat.id, "Vale sisend, palun proovige uuesti")
+        bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
         link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
 
 def lapsed(message, sihtkoht, user_date, suund, tagasilend, adults, suund1):
     try:
         children = int(message.text)
-        bot.send_message(message.chat.id, "Siestage imikute arv")
+        bot.send_message(message.chat.id, "Siestage imikute arv:")
         bot.register_next_step_handler(message, imikud, sihtkoht, user_date, suund, tagasilend, adults, children, suund1)
     except:
-        bot.send_message(message.chat.id, "Vale sisend, palun proovige uuesti")
+        bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
         link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
 
@@ -170,7 +172,7 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
         l = list(dest_airport_name)
         dest_airport_name = ''.join(l[l.index('('):l.index(")")+1])
 
-        bot.send_message(message.chat.id, "Laen alla parimad hinnad...")
+        bot.send_message(message.chat.id, "Laen alla parimad hinnad (10 sek)...")
         try:
             prices = functionality.get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1)
             prices_msg = []
@@ -183,12 +185,12 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
             send_graph(message, sihtkoht)
         except Exception as e:
             print(e)
-            bot.send_message(message.chat.id, "Tekkis viga, palun proovige uuesti")
+            bot.send_message(message.chat.id, "Tekkis viga. Palun proovige uuesti")
             link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
     except Exception as e:
         print(e)
-        bot.send_message(message.chat.id, "Vale sisend, palun proovige uuesti")
+        bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
         link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
 
@@ -205,7 +207,7 @@ def send_graph(message, sihtkoht):
     viivitus = functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
     print("see on viiv", viivitus)
     if os.path.exists('graph1.png'):
-        if viivitus == 0.0 or viivitus == []:
+        if viivitus == 0.0:
             bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
 
         elif viivitus != []:
