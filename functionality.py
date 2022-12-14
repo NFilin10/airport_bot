@@ -5,6 +5,8 @@ import requests
 import json
 import datetime
 import numpy as np
+import pylab
+
 
 def get_all_departures(sihtkoht):
     url = "https://www.tallinn-airport.ee/en/flight-info/realtime-flights/"
@@ -32,11 +34,10 @@ def get_all_departures(sihtkoht):
         if i == []:
             pass
         else:
-            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing':
+            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing' and i[4].split(" ")[0] != 'Cancelled':
                 sihtkoht_times.append(i[0::4]+i[3:4])
-            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing':
+            if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing' and i[4].split(" ")[0] != 'Cancelled':
                 all_departures_times.append(i[0::4] + i[3:4])
-
 
     for i in sihtkoht_times:
         for j in range(1, 2):
@@ -46,7 +47,6 @@ def get_all_departures(sihtkoht):
         for j in range(1, 2):
             i[j] = i[j].replace("Departed ", "")
 
-
     sihtkoht_times_dict = {}
     for i in range(len(sihtkoht_times)):
 
@@ -55,7 +55,6 @@ def get_all_departures(sihtkoht):
             sihtkoht_times_dict[sihtkoht_times[i][2]] = [sihtkoht_times[i][0:2]]
         else:
             sihtkoht_times_dict[sihtkoht_times[i][2]] += [sihtkoht_times[i][0:2]]
-
 
     all_departures_dict = {}
     for i in range(len(all_departures_times)):
@@ -82,14 +81,10 @@ def time_difference_minutes(d):
 
             seconds = (datetime2 - datetime1).total_seconds()
             minutes = int(seconds / 60)
-            print(minutes)
             if minutes <= 0:
                 pass
             else:
-                print(minutes)
                 sum += minutes
-
-
 
         viivitus.append(round(sum/len(d[k]), 2))
         company.append(k)
@@ -98,6 +93,7 @@ def time_difference_minutes(d):
 
 
 def graph(all_viiv, all_comp, dest_viiv, dest_comp):
+    pylab.clf()
     plt.title('Viivituse graafik', fontsize=12)
     plt.xlabel("Keskmine viivitus minutites", fontsize=9)
 
@@ -124,6 +120,7 @@ def graph(all_viiv, all_comp, dest_viiv, dest_comp):
     else:
         return []
 
+
 def get_country_indexes():
     url = 'https://www.tallinn-airport.ee/en/flight-info/destinations/'#"https://www.tallinn-airport.ee/lennuinfo/sihtkohad/"
     page = requests.get(url)
@@ -136,7 +133,6 @@ def get_country_indexes():
         country_id = id.get('data-destination')
         country_data[country_name] = country_id
     return country_data
-
 
 
 def get_avaliable_dates(sihtkoht):
@@ -153,9 +149,7 @@ def get_avaliable_dates(sihtkoht):
     content_dict = json.loads(content)
 
     forward = content_dict['forward']
-    print("FOW", forward)
     back = content_dict['back']
-    print("BACK", back)
     return forward, back
 
 
@@ -169,7 +163,7 @@ def sihtkohad(direction, sihtkoht, date):
         'direction': direction,
         'language': 'et'
     }
-    print(payload)
+
     flights = requests.post("https://www.tallinn-airport.ee/wp-admin/admin-ajax.php", data=payload)
     flight_info = json.loads(flights.text)
 
@@ -203,26 +197,43 @@ def get_dest_airport_name(sihtkoht):
         content = json.loads(pg.text)
         airport = content[0]["value"]
 
-
         return airport
 
 
 def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pens, suund1):
-    payload = {
-        'goToSearch': '1',
-        'language': 'et',
-        '_wpnonce': get_nonce(),
-        '_wp_http_referer': '/lennuinfo/sihtkohad/',
-        'action': 'search_flight_form_submit',
-        'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
-        'flightTo': get_dest_airport_name(sihtkoht),
-        'oneWay': suund,
-        'startDate': kuupaev,
-        'backDate': tagasi_lend,
-        'adults': adults,
-        'children': children,
-        'infants': pens
-    }
+    if suund1 == "back":
+        payload = {
+            'goToSearch': '1',
+            'language': 'et',
+            '_wpnonce': get_nonce(),
+            '_wp_http_referer': '/lennuinfo/sihtkohad/',
+            'action': 'search_flight_form_submit',
+            'flightFrom': get_dest_airport_name(sihtkoht),
+            'flightTo': 'Tallinn, Lennart Meri (TLL) - Eesti',
+            'oneWay': suund,
+            'startDate': kuupaev,
+            'backDate': tagasi_lend,
+            'adults': adults,
+            'children': children,
+            'infants': pens
+        }
+
+    else:
+        payload = {
+            'goToSearch': '1',
+            'language': 'et',
+            '_wpnonce': get_nonce(),
+            '_wp_http_referer': '/lennuinfo/sihtkohad/',
+            'action': 'search_flight_form_submit',
+            'flightFrom': 'Tallinn, Lennart Meri (TLL) - Eesti',
+            'flightTo': get_dest_airport_name(sihtkoht),
+            'oneWay': suund,
+            'startDate': kuupaev,
+            'backDate': tagasi_lend,
+            'adults': adults,
+            'children': children,
+            'infants': pens
+        }
 
     url = "https://www.tallinn-airport.ee/wp-admin/admin-ajax.php"
     page = requests.post(url, data=payload)
@@ -232,7 +243,6 @@ def get_tickets_link(sihtkoht, kuupaev, suund, tagasi_lend, adults, children, pe
 
 
 def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1):
-
     if suund1 == "forward":
         p = {"adt_count":adults,
             "chd_count":children,
@@ -272,9 +282,7 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
     search_id = json.dumps(id["result"]["search_id"])
     calendar_id = json.dumps(id["result"]["calendar_id"])
 
-    print(search_id)
-    print(calendar_id)
-    time.sleep(10)
+    time.sleep(20)
 
     p1 = {
         'lang':'et',
@@ -297,7 +305,6 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
         if js["flights"]["flights"][i]["isCheapest"] == True:
             prices.append(["Soodsaim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
 
-    print(prices)
     return prices
 
 

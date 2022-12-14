@@ -4,6 +4,7 @@ import functionality
 import keyboard
 import os
 
+
 bot = telebot.TeleBot(token)
 
 @bot.message_handler(commands=['start'])
@@ -20,10 +21,10 @@ def find(message):
 
 def get_place(message):
     user_place = message.text
+
     if user_place in functionality.get_country_indexes():
         bot.send_message(message.chat.id, "Valige suund:", reply_markup=keyboard.direction)
         bot.register_next_step_handler(message, get_suund, user_place)
-
     elif user_place == "/find":
         find(message)
     elif user_place == "/start":
@@ -47,12 +48,10 @@ def get_suund(message, sihtkoht):
         kuupaevad_sinna, kuupaevad_tagsi = functionality.get_avaliable_dates(sihtkoht)
         bot.send_message(message.chat.id, "Valige kuupäev:", reply_markup=keyboard.kuupaevad_sinna(kuupaevad_sinna))
         bot.register_next_step_handler(message, date, suund, sihtkoht, kuupaevad_tagsi)
-
     elif suund == "/find":
         find(message)
     elif suund == "/start":
         start()
-
     else:
         bot.send_message(message.chat.id, "Sellist suunda ei ole. Palun proovige uuesti")
         find(message)
@@ -65,7 +64,6 @@ def vale_kuupaev(message, sihtkoht, suund, kuupaevad_tagasi):
 
 def date(message, suund, sihtkoht, kuupaevad_tagsi):
     user_date = message.text
-    print("date", user_date)
     if functionality.kuupaev_kontroll(user_date) == True:
         if suund == "Sinna":
             suund1 = "forward"
@@ -110,7 +108,6 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
 
 def back_date(message, sihtkoht, suund, user_date, suund1, kuupaevad_tagasi):
     back_date = message.text
-    print("TAGSI", back_date)
     if functionality.kuupaev_kontroll(back_date) == True:
         lennud_tagasi = functionality.sihtkohad("back", sihtkoht, back_date)
         if lennud_tagasi == "":
@@ -131,6 +128,7 @@ def back_date(message, sihtkoht, suund, user_date, suund1, kuupaevad_tagasi):
 
 def link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1):
     vastus = message.text
+    sihtkoht = sihtkoht.replace("*", "")
     if vastus == "Ei":
         bot.send_message(message.chat.id, "Aitäh, et kasutasite boti!", reply_markup=keyboard.delete_keyboard)
 
@@ -147,7 +145,7 @@ def link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 def taiskasvanud(message, sihtkoht, user_date, suund, tagasilend, suund1):
     try:
         adults = int(message.text)
-        bot.send_message(message.chat.id, "Siestage laste arv:")
+        bot.send_message(message.chat.id, "Sisestage laste arv:")
         bot.register_next_step_handler(message, lapsed, sihtkoht, user_date, suund, tagasilend, adults, suund1)
     except:
         bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
@@ -157,7 +155,7 @@ def taiskasvanud(message, sihtkoht, user_date, suund, tagasilend, suund1):
 def lapsed(message, sihtkoht, user_date, suund, tagasilend, adults, suund1):
     try:
         children = int(message.text)
-        bot.send_message(message.chat.id, "Siestage imikute arv:")
+        bot.send_message(message.chat.id, "Sisestage imikute arv:")
         bot.register_next_step_handler(message, imikud, sihtkoht, user_date, suund, tagasilend, adults, children, suund1)
     except:
         bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
@@ -172,7 +170,7 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
         l = list(dest_airport_name)
         dest_airport_name = ''.join(l[l.index('('):l.index(")")+1])
 
-        bot.send_message(message.chat.id, "Laen alla parimad hinnad (10 sek)...")
+        bot.send_message(message.chat.id, "Laen alla parimad hinnad (20 sek)...")
         try:
             prices = functionality.get_best_ticket_prices(user_date, tagasilend, adults, children, infants, dest_airport_name, suund1)
             prices_msg = []
@@ -183,20 +181,17 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
             formatted_prices = "\n".join(prices_msg)
             bot.send_message(message.chat.id, formatted_prices)
             send_graph(message, sihtkoht)
-        except Exception as e:
-            print(e)
+        except Exception:
             bot.send_message(message.chat.id, "Tekkis viga. Palun proovige uuesti")
-            link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
-    except Exception as e:
-        print(e)
+
+    except Exception:
         bot.send_message(message.chat.id, "Vale sisend. Palun proovige uuesti")
         link_vajalik_vastus(message, sihtkoht, user_date, suund, tagasilend, suund1)
 
 
 def send_graph(message, sihtkoht):
     all_dep, sihtkoht_dep = functionality.get_all_departures(sihtkoht)
-    print(sihtkoht_dep)
     if sihtkoht_dep == {}:
         bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
     all_dep_viiv, all_dep_comp = functionality.time_difference_minutes(all_dep)
@@ -205,7 +200,6 @@ def send_graph(message, sihtkoht):
         sihtkoht_viiv = []
         sihtkoht_comp = []
     viivitus = functionality.graph(all_dep_viiv, all_dep_comp, sihtkoht_viiv, sihtkoht_comp)
-    print("see on viiv", viivitus)
     if os.path.exists('graph1.png'):
         if viivitus == 0.0:
             bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
@@ -213,13 +207,12 @@ def send_graph(message, sihtkoht):
         elif viivitus != []:
             bot.send_message(message.chat.id, f"Keskmine viivitus sihtkohta {sihtkoht} on {round(viivitus, 1)} minutit")
 
-
-
         photo = open('graph1.png', 'rb')
         bot.send_photo(message.chat.id, photo)
         os.remove('graph1.png')
     else:
-        print("error")
+        bot.send_message(message.chat.id, "Tekkis viga. Palun proovige uuesti")
+        start(message)
 
 if  __name__ == '__main__':
     bot.polling(none_stop=True)

@@ -29,7 +29,6 @@ def kuupaevad_tagasi(kuupaevad):
     kuupaead_tagasi = []
     kuupaead_tagasi_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for date in kuupaevad:
-        print(date)
         button_tagasi = types.KeyboardButton(date)
         kuupaead_tagasi = kuupaead_tagasi_markup.add(button_tagasi)
     return kuupaead_tagasi
