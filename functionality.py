@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 import pylab
 
-
+#Link botile: https://t.me/airportTickets_bot
 def get_all_departures(sihtkoht):
     url = "https://www.tallinn-airport.ee/en/flight-info/realtime-flights/"
     page = requests.get(url)
