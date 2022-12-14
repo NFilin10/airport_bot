@@ -15,7 +15,7 @@ def start(message):
 @bot.message_handler(commands=['otsi'])
 def find(message):
     countries = functionality.get_country_indexes()
-    bot.send_message(message.chat.id, f"Sisetage koht kuhu soovite minna: ", reply_markup=keyboard.countries(countries))
+    bot.send_message(message.chat.id, f"Sisestage koht kuhu soovite minna: ", reply_markup=keyboard.countries(countries))
     bot.register_next_step_handler(message, get_place)
 
 
@@ -94,7 +94,7 @@ def date(message, suund, sihtkoht, kuupaevad_tagsi):
                 find(message)
             else:
                 bot.send_message(message.chat.id, f"On olemas järgmised lennud sinna:\n\n{lennud_sinna}")
-                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupäev", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad_tagsi))
+                bot.send_message(message.chat.id, "Sisestage tagasilennu kuupäev:", reply_markup=keyboard.kuupaevad_tagasi(kuupaevad_tagsi))
                 bot.register_next_step_handler(message, back_date, sihtkoht, suund, user_date, suund1, kuupaevad_tagsi)
 
     elif user_date == "/find":

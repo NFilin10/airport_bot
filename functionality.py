@@ -299,11 +299,11 @@ def get_best_ticket_prices(user_date, tagasilend, adults, children, infants, des
 
     for i in range(0, len(js["flights"]["flights"])):
         if js["flights"]["flights"][i]["isFastest"] == True:
-            prices.append(["Kiireim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Kiireim", js["flights"]["flights"][i]["priceInfo"]["total"][0], "€"])
         if js["flights"]["flights"][i]["isOptimum"] == True:
-            prices.append(["Parim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Parim", js["flights"]["flights"][i]["priceInfo"]["total"][0], "€"])
         if js["flights"]["flights"][i]["isCheapest"] == True:
-            prices.append(["Soodsaim", js["flights"]["flights"][i]["priceInfo"]["total"][0]])
+            prices.append(["Soodsaim", js["flights"]["flights"][i]["priceInfo"]["total"][0], "€"])
 
     return prices
 
