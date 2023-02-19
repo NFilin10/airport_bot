@@ -34,7 +34,7 @@ def get_all_departures(sihtkoht):
         if i == []:
             pass
         else:
-            if sihtkoht == i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing' and i[4].split(" ")[0] != 'Cancelled':
+            if sihtkoht.lower() == i[2].lower() and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing' and i[4].split(" ")[0] != 'Cancelled':
                 sihtkoht_times.append(i[0::4]+i[3:4])
             if sihtkoht != i[2] and i[4] != '' and i[4].split(" ")[0] != 'Arrived' and i[4] != 'Gate closed' and i[4].split(" ")[0] != 'Estimated' and i[4].split(" ")[0] != 'Boarding' and i[4].split(" ")[0] != 'Landed' and i[4].split(" ")[0] != 'Delayed' and i[4].split(" ")[0] != 'Departing' and i[4].split(" ")[0] != 'Cancelled':
                 all_departures_times.append(i[0::4] + i[3:4])
