@@ -192,8 +192,6 @@ def imikud(message, sihtkoht, user_date, suund, tagasilend, adults, children, su
 
 def send_graph(message, sihtkoht):
     all_dep, sihtkoht_dep = functionality.get_all_departures(sihtkoht)
-    print(all_dep)
-    print(sihtkoht_dep)
 
     if sihtkoht_dep == {}:
         bot.send_message(message.chat.id, "Hetkel ei ole infot teie valitud sihtkoha kohta, seega on ainult teised sihtkohad")
